@@ -11,8 +11,9 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
 
-staticSites:
-  - name: debugcoach-frontend
+  - type: web
+    name: debugcoach-frontend
+    runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
