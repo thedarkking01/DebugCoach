@@ -1,25 +1,32 @@
 import os
 import json
 from dotenv import load_dotenv
-from google import genai
+from groq import Groq
 
 from backend.prompts import build_hint_prompt, build_solution_prompt
 from backend.schemas import HintResponse, SolutionResponse
 
 load_dotenv()
 
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GROQ_API_KEY")
 if not api_key:
-    raise ValueError("GEMINI_API_KEY not found in .env")
+    raise ValueError("GROQ_API_KEY not found in .env")
 
-client = genai.Client(api_key=api_key)
-MODEL = "gemini-3.5-flash-lite"
+client = Groq(api_key=api_key)
+MODEL = "qwen/qwen3.8-27b"
 
 
 def _call_model(prompt: str) -> dict:
-    response = client.models.generate_content(model=MODEL, contents=prompt)
-    text = response.text.strip()
-    # Strip markdown code fences if model wraps JSON in them
+    response = client.chat.completions.create(
+        model=MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3,
+    )
+    text = response.choices[0].message.content.strip()
+    # Strip Qwen3 thinking block if present
+    if "</think>" in text:
+        text = text.split("</think>")[-1].strip()
+    # Strip markdown code fences
     if text.startswith("```"):
         text = text.split("```")[1]
         if text.startswith("json"):
